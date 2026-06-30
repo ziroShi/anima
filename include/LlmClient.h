@@ -1,13 +1,16 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <curl/curl.h>
+
+#include "Turn.h"
 
 class LlmClient {
 
     public:
         explicit LlmClient(const char* api_key);
-        std::string sendMessage(const std::string& systemPrompt  ,const std::string& userMessage);
+        std::string sendMessage(const std::string& systemPrompt  ,const std::vector<Turn>& history);
 
     private:
         std::string apikey_;

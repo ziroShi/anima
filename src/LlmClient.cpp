@@ -11,19 +11,21 @@ static size_t write_cb(char* ptr, size_t size, size_t nmemb, void* userdata) {
 
 LlmClient::LlmClient(const char* api_key) : apikey_(api_key) {}
 
-std::string LlmClient::sendMessage(const std::string& systemPrompt,const std::string& userMessage) {
+std::string LlmClient::sendMessage(const std::string& systemPrompt,const std::vector<Turn>& history) {
+    json messages_json = json::array();
+    for (const Turn& t : history) {
+        messages_json.push_back({{"role", t.role}, {"content", t.content}});
+    }
     json body = {
         {"model", "claude-haiku-4-5"},
         {"max_tokens", 1024},
         {"system", systemPrompt},
-        {"messages", json::array({
-            {{"role", "user"}, {"content", userMessage}}
-        })}
+        {"messages", messages_json}
     };
 
     std::string body_str = body.dump();
 
-    struct curl_slist* headers = nullptr;
+    struct curl_slist* headers = nullptr;      
     headers = curl_slist_append(headers, "content-type: application/json");
     headers = curl_slist_append(headers, "anthropic-version: 2023-06-01");
     std::string auth = std::string("x-api-key: ") + apikey_;

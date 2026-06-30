@@ -1,12 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "sqlite3.h"
 
-struct Turn {
-    std::string role;
-    std::string content;
-};
+#include "Turn.h"
 
 class WorkingMemory {
     public:

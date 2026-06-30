@@ -43,3 +43,23 @@ void WorkingMemory::saveTurn(const std::string& role, const std::string& content
 
     sqlite3_finalize(stmt);
 }
+
+std::vector<Turn> WorkingMemory::fetchRecent(int n) {
+    std::vector<Turn> turns;
+    const char* sql = "SELECT role, content From workingmemory ORDER by id DESC LIMiT ?;";
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        fprintf(stderr, "prepare failed: %s\n", sqlite3_errmsg(db_));
+        return turns;
+    }
+    sqlite3_bind_int(stmt, 1, n);
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        Turn t;
+        t.role = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        t.content = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        turns.push_back(t);
+    }
+    sqlite3_finalize(stmt);
+    std::reverse(turns.begin(), turns.end());
+    return turns;
+}

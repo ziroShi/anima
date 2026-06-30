@@ -36,6 +36,7 @@ add_executable(anima
                 src/LlmClient.cpp
                 src/Persona.cpp
                 src/WorkingMemory.cpp
+                src/Mood.cpp
             )
 
 target_link_libraries(anima PRIVATE imgui CURL::libcurl nlohmann_json::nlohmann_json sqlite3)

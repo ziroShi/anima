@@ -14,6 +14,7 @@
 #include "LlmClient.h"
 #include "Persona.h"
 #include "WorkingMemory.h"
+#include "Mood.h"
 
 enum class Role {
     User,
@@ -30,6 +31,7 @@ static void glfw_error_callback(int error, const char* description) {
 }
 
 std::vector<Message> messages = {};
+Mood mood;
 
 int main(int, char**) {
     const char* api_key = std::getenv("ANIMA_API_KEY");
@@ -64,9 +66,13 @@ int main(int, char**) {
     bool waiting = false;
 
     Persona persona("config/persona.json");
-    std::string system = persona.systemPrompt();
 
     WorkingMemory workingmemory("anima.db");
+
+    for (const Turn& t : workingmemory.fetchRecent(50)) {
+    Role r = (t.role == "assistant") ? Role::Assistant : Role::User;
+    messages.push_back({ r, t.content});
+}
 
     while (!glfwWindowShouldClose(window))
     {
@@ -77,6 +83,8 @@ int main(int, char**) {
         ImGui::NewFrame();
 
         ImGui::Begin("Anima");
+
+        ImGui::Text("Mood: %s (%d/100)", mood.label().c_str(), mood.value());
 
         float reserved = ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("history", ImVec2(0, -reserved), ImGuiChildFlags_Borders);
@@ -104,8 +112,12 @@ int main(int, char**) {
             // std::string system = "You are Anima, a warm, upbeat companion. Keep replies short and friendly.";
             messages.push_back({ Role::User, msg});
             workingmemory.saveTurn("user", msg);
+            std::vector<Turn> conversation = workingmemory.fetchRecent(20);
+            std::string system = persona.systemPrompt()
+                            + "Right now your mood is " + mood.label() + ".";
+
             reply_future = std::async(std::launch::async,
-                [&client, system, msg]() { return client.sendMessage(system, msg); });
+                [&client, system, conversation]() { return client.sendMessage(system, conversation); });
             waiting = true;
             input_buf[0] = '\0';
         }
